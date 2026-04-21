@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro Fornitori | Albo Aziendale</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --primary: #1a2744;
+    --primary-mid: #2c3e6b;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --accent-border: #bfdbfe;
+    --success: #16a34a;
+    --success-bg: #f0fdf4;
+    --success-border: #bbf7d0;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --warning: #d97706;
+    --warning-bg: #fffbeb;
+    --surface: #ffffff;
+    --surface2: #f8fafc;
+    --surface3: #f1f5f9;
+    --border: #e2e8f0;
+    --border2: #cbd5e1;
+    --text: #0f172a;
+    --text2: #475569;
+    --text3: #94a3b8;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--surface3);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--primary);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-logo {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .header-logo svg { width: 20px; height: 20px; }
+  .header-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.01em;
+  }
+  .header-subtitle {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 1px;
+  }
+  .header-badges {
+    display: flex;
+    gap: 8px;
+  }
+  .badge-compliance {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+  .badge-gdpr { background: rgba(37,99,235,0.25); color: #93c5fd; border: 1px solid rgba(37,99,235,0.4); }
+  .badge-nis2 { background: rgba(22,163,74,0.25); color: #86efac; border: 1px solid rgba(22,163,74,0.4); }
+
+  /* LAYOUT */
+  .layout { display: flex; min-height: calc(100vh - 60px); }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 300px;
+    min-width: 300px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .filter-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .filter-group { display: flex; flex-direction: column; gap: 8px; }
+
+  .filter-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .filter-label svg { width: 13px; height: 13px; color: var(--accent); flex-shrink: 0; }
+
+  input[type="text"], select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+  }
+  input[type="text"]:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  input[type="text"]::placeholder { color: var(--text3); }
+
+  select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
+
+  .accredited-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.12s;
+    font-size: 13px;
+    color: var(--text2);
+    user-select: none;
+  }
+  .radio-option:hover { border-color: var(--accent); background: var(--accent-light); }
+  .radio-option.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); font-weight: 500; }
+  .radio-option input[type="radio"] { display: none; }
+  .radio-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.12s;
+  }
+  .radio-option.active .radio-dot { border-color: var(--accent); }
+  .radio-dot-inner {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: none;
+  }
+  .radio-option.active .radio-dot-inner { display: block; }
+
+  .btn-reset {
+    width: 100%;
+    padding: 8px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.12s;
+    font-family: inherit;
+  }
+  .btn-reset:hover { background: var(--border); color: var(--text); }
+
+  .divider { height: 1px; background: var(--border); }
+
+  /* UPLOAD SECTION */
+  .upload-section {
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--surface2);
+  }
+  .upload-section:hover { border-color: var(--accent); background: var(--accent-light); }
+  .upload-section.dragging { border-color: var(--accent); background: var(--accent-light); }
+  .upload-icon { font-size: 24px; margin-bottom: 8px; }
+  .upload-text { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
+  .upload-hint { font-size: 11px; color: var(--text3); }
+  #file-input { display: none; }
+
+  .upload-status {
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .upload-status.success { background: var(--success-bg); border: 1px solid var(--success-border); color: var(--success); display: flex; }
+  .upload-status.error { background: var(--danger-bg); border: 1px solid #fecaca; color: var(--danger); display: flex; }
+  .upload-status.info { background: var(--accent-light); border: 1px solid var(--accent-border); color: var(--accent); display: flex; }
+
+  /* EXCEL FORMAT GUIDE */
+  .format-guide {
+    background: var(--warning-bg);
+    border: 1px solid #fde68a;
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-size: 11px;
+    color: #92400e;
+  }
+  .format-guide-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .format-guide table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  .format-guide th, .format-guide td { padding: 3px 6px; text-align: left; border-bottom: 1px solid #fde68a; }
+  .format-guide th { font-weight: 700; font-size: 10px; }
+
+  /* MAIN CONTENT */
+  .main { flex: 1; padding: 1.5rem; overflow: auto; }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 11px; color: var(--text3); font-weight: 500; margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .stat-accent { color: var(--accent); }
+  .stat-success { color: var(--success); }
+
+  /* TABLE CARD */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .table-toolbar {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .table-toolbar-left {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .result-count {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text3);
+  }
+  .active-filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 100px;
+    background: var(--accent-light);
+    border: 1px solid var(--accent-border);
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .filter-pill:hover { background: #dbeafe; }
+  .filter-pill .x { font-size: 12px; font-weight: 700; }
+
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.data-table thead th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  table.data-table thead th:hover { background: var(--surface3); color: var(--text2); }
+  table.data-table thead th .sort-arrow { margin-left: 4px; opacity: 0.4; }
+  table.data-table thead th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+  table.data-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  table.data-table tbody tr:last-child { border-bottom: none; }
+  table.data-table tbody tr:hover { background: var(--surface2); }
+  table.data-table tbody td {
+    padding: 12px 14px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .td-ragione { font-weight: 500; }
+  .td-ragione .highlight { background: #fef08a; border-radius: 2px; padding: 0 1px; color: #713f12; }
+
+  .categorie-list { display: flex; flex-wrap: wrap; gap: 4px; }
+  .categoria-tag {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 100px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+  .categoria-tag.highlight-cat {
+    background: #fef9c3;
+    border-color: #fde047;
+    color: #713f12;
+  }
+
+  .badge-albo {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 100px;
+  }
+  .badge-albo.si { background: var(--success-bg); border: 1px solid var(--success-border); color: var(--success); }
+  .badge-albo.no { background: var(--surface3); border: 1px solid var(--border2); color: var(--text3); }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge-albo.si .badge-dot { background: var(--success); }
+  .badge-albo.no .badge-dot { background: var(--text3); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text3);
+  }
+  .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state-title { font-size: 15px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+  .empty-state-sub { font-size: 13px; }
+
+  /* PAGINATION */
+  .pagination {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .pagination-pages { display: flex; gap: 4px; }
+  .page-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+    font-family: inherit;
+  }
+  .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .page-btn:disabled { opacity: 0.4; cursor: default; }
+  .page-size-select { padding: 4px 24px 4px 8px; font-size: 12px; border-radius: 6px; }
+
+  /* DEMO DATA BUTTON */
+  .btn-demo {
+    width: 100%;
+    padding: 8px;
+    background: var(--primary);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 500;
+    color: #93c5fd;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.12s;
+    font-family: inherit;
+  }
+  .btn-demo:hover { background: var(--primary-mid); }
+
+  /* GITLAB BUTTON */
+  .btn-gitlab {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--primary);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: all 0.12s;
+    font-family: inherit;
+    margin-bottom: 2px;
+  }
+  .btn-gitlab:hover { background: var(--primary-mid); }
+  .btn-gitlab:disabled { opacity: 0.6; cursor: default; }
+  .btn-gitlab.loading { background: var(--primary-mid); }
+
+  .upload-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0 8px;
+    font-size: 10px;
+    color: var(--text3);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .upload-divider::before, .upload-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* EXPORT BUTTON */
+  .btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--success);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.12s;
+    font-family: inherit;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .btn-export:hover { background: #15803d; }
+  .btn-export:active { transform: scale(0.97); }
+  .btn-export:disabled { opacity: 0.45; cursor: default; transform: none; }
+  .btn-export svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.5);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  }
+  .modal-title { font-size: 15px; font-weight: 700; margin-bottom: 0.5rem; }
+  .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 1rem; line-height: 1.6; }
+  .modal-close {
+    width: 100%;
+    padding: 8px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* CATEGORIA + ARTICOLI BLOCK */
+  .cat-art-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .cat-art-block + .cat-art-block {
+    margin-top: 6px;
+    border-top: 2px dashed var(--border2);
+    padding-top: 9px;
+  }
+  .cat-art-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 4px;
+  }
+  .cat-art-label .cat-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 100px;
+    background: var(--primary);
+    color: #fff;
+    letter-spacing: 0.02em;
+  }
+  .cat-art-label .cat-badge.highlight-cat {
+    background: #ca8a04;
+    color: #fff;
+  }
+  .articoli-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  .articolo-tag {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 100px;
+    background: var(--accent-light);
+    border: 1px solid var(--accent-border);
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .articoli-empty {
+    font-size: 11px;
+    color: var(--text3);
+    font-style: italic;
+  }
+
+  /* Colonna articoli — width controllata */
+  th#th-articoli, td.td-articoli { min-width: 200px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .sidebar { width: 260px; min-width: 260px; }
+  }
+  @media (max-width: 680px) {
+    .layout { flex-direction: column; }
+    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .header-badges { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+      </svg>
+    </div>
+    <div>
+      <div class="header-title">Registro Fornitori</div>
+      <div class="header-subtitle">Albo Aziendale Accreditato</div>
+    </div>
+  </div>
+  <div class="header-badges">
+    <span class="badge-compliance badge-gdpr">GDPR</span>
+    <span class="badge-compliance badge-nis2">NIS2</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR FILTRI -->
+  <aside class="sidebar">
+
+    <div>
+      <div class="filter-section-title">Carica Dati</div>
+      <!-- CARICA DA GITLAB -->
+      <button class="btn-gitlab" id="btn-gitlab" onclick="loadFromGitLab()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        <span id="btn-gitlab-label">Carica DB da GitLab</span>
+      </button>
+
+      <div class="upload-status" id="upload-status"></div>
+
+      <div class="divider" style="margin-top:10px"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="filter-section-title">Filtri di Ricerca</div>
+
+      <div class="filter-group">
+        <div class="filter-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h4M7 12h4M7 17h4M15 7h2M15 12h2M15 17h2"/></svg>
+          Codice Fornitore
+        </div>
+        <input type="text" id="filter-codice" placeholder="Cerca per codice..." oninput="applyFilters()" />
+      </div>
+
+      <div class="filter-group" style="margin-top:12px">
+        <div class="filter-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          Ragione Sociale
+        </div>
+        <input type="text" id="filter-ragione" placeholder="Cerca per nome..." oninput="applyFilters()" />
+      </div>
+
+      <div class="filter-group" style="margin-top:12px">
+        <div class="filter-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h8"/></svg>
+          Categoria Merceologica
+        </div>
+        <input type="text" id="filter-categoria" placeholder="Cerca categoria..." oninput="applyFilters()" />
+      </div>
+
+      <div class="filter-group" style="margin-top:12px">
+        <div class="filter-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Accreditato all'Albo
+        </div>
+        <div class="accredited-filter">
+          <label class="radio-option active" id="r-tutti" onclick="setAccreditato('tutti')">
+            <input type="radio" name="accreditato" value="tutti" checked />
+            <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+            Tutti i fornitori
+          </label>
+          <label class="radio-option" id="r-si" onclick="setAccreditato('si')">
+            <input type="radio" name="accreditato" value="si" />
+            <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+            ✓ Solo accreditati
+          </label>
+          <label class="radio-option" id="r-no" onclick="setAccreditato('no')">
+            <input type="radio" name="accreditato" value="no" />
+            <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+            ✗ Non accreditati
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <button class="btn-reset" onclick="resetFilters()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9M3 12H7"/></svg>
+      Azzera filtri
+    </button>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- STATISTICHE -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">Fornitori Totali</div>
+        <div class="stat-value" id="stat-totale">—</div>
+        <div class="stat-sub">nel database</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Risultati Ricerca</div>
+        <div class="stat-value stat-accent" id="stat-filtrati">—</div>
+        <div class="stat-sub">corrispondenze</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Accreditati Albo</div>
+        <div class="stat-value stat-success" id="stat-accreditati">—</div>
+        <div class="stat-sub" id="stat-perc">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Categorie Uniche</div>
+        <div class="stat-value" id="stat-categorie">—</div>
+        <div class="stat-sub">tipologie merceologiche</div>
+      </div>
+    </div>
+
+    <!-- TABELLA -->
+    <div class="table-card">
+      <div class="table-toolbar">
+        <div class="table-toolbar-left">
+          Elenco Fornitori
+          <span class="result-count" id="result-count"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="active-filters" id="active-filters"></div>
+          <button class="btn-export" id="btn-export" onclick="exportExcel()" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Esporta Excel
+          </button>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th onclick="sortBy('codice')" id="th-codice" style="width:130px">Codice <span class="sort-arrow">↕</span></th>
+              <th onclick="sortBy('ragione')" id="th-ragione">Ragione Sociale <span class="sort-arrow">↕</span></th>
+              <th onclick="sortBy('categorie')" id="th-categorie">Categorie Merceologiche <span class="sort-arrow">↕</span></th>
+              <th id="th-articoli">Articoli di Riferimento</th>
+              <th onclick="sortBy('accreditato')" id="th-accreditato" style="width:160px">Accreditato Albo <span class="sort-arrow">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" id="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-title">Nessun dato caricato</div>
+        <div class="empty-state-sub">Importa un file Excel o carica i dati di esempio per iniziare</div>
+      </div>
+
+      <div class="pagination" id="pagination" style="display:none">
+        <div>
+          Mostra
+          <select class="page-size-select" id="page-size" onchange="setPageSize(this.value)">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          per pagina
+        </div>
+        <div class="pagination-pages" id="pagination-pages"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL ERRORE -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Errore</div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <button class="modal-close" onclick="closeModal()">Chiudi</button>
+  </div>
+</div>
+
+<script>
+  let allData = [];
+  let filteredData = [];
+  let currentPage = 1;
+  let pageSize = 25;
+  let sortField = 'ragione';
+  let sortDir = 'asc';
+  let accreditatoFilter = 'tutti';
+  // pivotData: Map<codice_fornitore, Map<categoria, articolo[]>>
+  // (la chiave codice può essere vuota; in tal caso si usa la ragione sociale come fallback)
+  let pivotData = new Map();
+
+  /* -------- CATEGORY DROPDOWN -------- */
+  function updateCategoryDropdown(){ /* freetext search — nessun dropdown */ }
+
+  /* -------- FILTERS -------- */
+  function applyFilters(){
+    const qK = document.getElementById('filter-codice').value.trim().toLowerCase();
+    const qR = document.getElementById('filter-ragione').value.trim().toLowerCase();
+    const qC = document.getElementById('filter-categoria').value.trim().toLowerCase();
+
+    filteredData = allData.filter(d=>{
+      if(qK && !d.codice.toLowerCase().includes(qK)) return false;
+      if(qR && !d.ragione.toLowerCase().includes(qR)) return false;
+      if(qC && !d.categorie.some(c=>c.toLowerCase().includes(qC))) return false;
+      if(accreditatoFilter==='si' && !d.accreditato) return false;
+      if(accreditatoFilter==='no' && d.accreditato) return false;
+      return true;
+    });
+
+    filteredData = sortData(filteredData);
+    currentPage = 1;
+    renderTable();
+    renderActivePills();
+    updateStats();
+  }
+
+  function setAccreditato(val){
+    accreditatoFilter = val;
+    ['tutti','si','no'].forEach(v=>{
+      const el = document.getElementById('r-'+v);
+      if(el) el.classList.toggle('active', v===val);
+    });
+    applyFilters();
+  }
+
+  function resetFilters(){
+    document.getElementById('filter-codice').value='';
+    document.getElementById('filter-ragione').value='';
+    document.getElementById('filter-categoria').value='';
+    setAccreditato('tutti');
+    applyFilters();
+  }
+
+  /* -------- SORT -------- */
+  function sortBy(field){
+    if(sortField===field) sortDir = sortDir==='asc'?'desc':'asc';
+    else { sortField=field; sortDir='asc'; }
+    ['codice','ragione','categorie','accreditato'].forEach(f=>{
+      const th = document.getElementById('th-'+f);
+      if(!th) return;
+      th.classList.toggle('sorted', f===sortField);
+      const arrow = th.querySelector('.sort-arrow');
+      if(arrow) arrow.textContent = f===sortField ? (sortDir==='asc'?'↑':'↓') : '↕';
+    });
+    filteredData = sortData(filteredData);
+    currentPage = 1;
+    renderTable();
+  }
+
+  function sortData(data){
+    return [...data].sort((a,b)=>{
+      let va, vb;
+      if(sortField==='codice'){va=a.codice.toLowerCase();vb=b.codice.toLowerCase();}
+      else if(sortField==='ragione'){va=a.ragione.toLowerCase();vb=b.ragione.toLowerCase();}
+      else if(sortField==='categorie'){va=a.categorie.join(',').toLowerCase();vb=b.categorie.join(',').toLowerCase();}
+      else if(sortField==='accreditato'){va=a.accreditato?0:1;vb=b.accreditato?0:1;}
+      if(va<vb) return sortDir==='asc'?-1:1;
+      if(va>vb) return sortDir==='asc'?1:-1;
+      return 0;
+    });
+  }
+
+  /* -------- RENDER TABLE -------- */
+  function renderTable(){
+    const tbody = document.getElementById('table-body');
+    const empty = document.getElementById('empty-state');
+    const pagination = document.getElementById('pagination');
+    const countEl = document.getElementById('result-count');
+
+    if(!allData.length){
+      tbody.innerHTML='';
+      empty.style.display='block';
+      pagination.style.display='none';
+      countEl.textContent='';
+      document.getElementById('btn-export').disabled = true;
+      return;
+    }
+
+    const qK = document.getElementById('filter-codice').value.trim().toLowerCase();
+    const qR = document.getElementById('filter-ragione').value.trim().toLowerCase();
+    const qC = document.getElementById('filter-categoria').value.trim().toLowerCase();
+
+    const start=(currentPage-1)*pageSize;
+    const end=Math.min(start+pageSize, filteredData.length);
+    const pageData = filteredData.slice(start,end);
+
+    if(!filteredData.length){
+      tbody.innerHTML='';
+      empty.style.display='block';
+      empty.querySelector('.empty-state-title').textContent='Nessun risultato trovato';
+      empty.querySelector('.empty-state-sub').textContent='Prova a modificare i filtri di ricerca';
+      pagination.style.display='none';
+      countEl.textContent='(0 risultati)';
+      document.getElementById('btn-export').disabled = true;
+      return;
+    }
+
+    empty.style.display='none';
+    countEl.textContent=`(${filteredData.length} risultati)`;
+    document.getElementById('btn-export').disabled = false;
+
+    tbody.innerHTML = pageData.map(d=>{
+      const codHtml = qK ? highlightText(d.codice||'—', qK) : escapeHtml(d.codice||'—');
+      const ragHtml = qR ? highlightText(d.ragione, qR) : escapeHtml(d.ragione);
+
+      // Colonna Categorie (solo badge nome)
+      const catsHtml = d.categorie.map(c=>{
+        const isHigh = qC && c.toLowerCase().includes(qC);
+        return `<span class="categoria-tag${isHigh?' highlight-cat':''}">${escapeHtml(c)}</span>`;
+      }).join('') || '<span style="color:var(--text3);font-size:12px">—</span>';
+
+      // Colonna Articoli — un blocco per categoria
+      const artHtml = buildArticoliHtml(d, qC);
+
+      const alboHtml = d.accreditato
+        ? `<span class="badge-albo si"><span class="badge-dot"></span>Accreditato</span>`
+        : `<span class="badge-albo no"><span class="badge-dot"></span>Non accreditato</span>`;
+
+      return `<tr>
+        <td style="font-family:monospace;font-size:12px;color:var(--text2)">${codHtml}</td>
+        <td class="td-ragione">${ragHtml}</td>
+        <td><div class="categorie-list">${catsHtml}</div></td>
+        <td class="td-articoli">${artHtml}</td>
+        <td>${alboHtml}</td>
+      </tr>`;
+    }).join('');
+
+    renderPagination();
+  }
+
+  function highlightText(text, query){
+    if(!query) return escapeHtml(text);
+    const esc = escapeHtml(text);
+    const re = new RegExp('('+escapeRe(query)+')', 'gi');
+    return esc.replace(re, '<span class="highlight">$1</span>');
+  }
+  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escapeRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+  /* -------- ARTICOLI PER CATEGORIA -------- */
+  function buildArticoliHtml(d, qC){
+    if(!d.categorie.length){
+      return '<span style="color:var(--text3);font-size:12px">—</span>';
+    }
+    const blocks = d.categorie.map(cat => {
+      const isHigh = qC && cat.toLowerCase().includes(qC);
+      // Lookup diretto categoria -> articoli (la mappa e' globale, non per fornitore)
+      const articoli = pivotData.get(normKey(cat)) || [];
+      const artTags = articoli.length
+        ? articoli.map(a=>`<span class="articolo-tag">${escapeHtml(a)}</span>`).join('')
+        : `<span class="articoli-empty">Nessun articolo associato</span>`;
+      return `<div class="cat-art-block">
+        <div class="cat-art-label">
+          <span class="cat-badge${isHigh?' highlight-cat':''}">${escapeHtml(cat)}</span>
+        </div>
+        <div class="articoli-list">${artTags}</div>
+      </div>`;
+    });
+    return blocks.join('');
+  }
+
+  function normKey(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+
+  /* -------- PAGINATION -------- */
+  function renderPagination(){
+    const total = filteredData.length;
+    const pages = Math.ceil(total/pageSize);
+    const el = document.getElementById('pagination-pages');
+    const pg = document.getElementById('pagination');
+
+    if(pages<=1 && total<=pageSize){ pg.style.display='none'; return; }
+    pg.style.display='flex';
+
+    let btns='';
+    btns+=`<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+
+    let lo=Math.max(1,currentPage-2), hi=Math.min(pages,currentPage+2);
+    if(lo>1){btns+=`<button class="page-btn" onclick="goPage(1)">1</button>`; if(lo>2) btns+=`<button class="page-btn" disabled>…</button>`;}
+    for(let p=lo;p<=hi;p++){
+      btns+=`<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+    }
+    if(hi<pages){if(hi<pages-1) btns+=`<button class="page-btn" disabled>…</button>`; btns+=`<button class="page-btn" onclick="goPage(${pages})">${pages}</button>`;}
+    btns+=`<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>›</button>`;
+    el.innerHTML=btns;
+  }
+
+  function goPage(p){ const pages=Math.ceil(filteredData.length/pageSize); if(p<1||p>pages) return; currentPage=p; renderTable(); }
+  function setPageSize(v){ pageSize=parseInt(v); currentPage=1; renderTable(); }
+
+  /* -------- ACTIVE PILLS -------- */
+  function renderActivePills(){
+    const qK = document.getElementById('filter-codice').value.trim();
+    const qR = document.getElementById('filter-ragione').value.trim();
+    const qC = document.getElementById('filter-categoria').value.trim();
+    const el = document.getElementById('active-filters');
+    let pills='';
+    if(qK) pills+=`<span class="filter-pill" onclick="clearFilter('codice')">Codice: "${qK}" <span class="x">×</span></span>`;
+    if(qR) pills+=`<span class="filter-pill" onclick="clearFilter('ragione')">Ragione: "${qR}" <span class="x">×</span></span>`;
+    if(qC) pills+=`<span class="filter-pill" onclick="clearFilter('categoria')">Categoria: "${qC}" <span class="x">×</span></span>`;
+    if(accreditatoFilter!=='tutti'){
+      const label = accreditatoFilter==='si'?'Solo accreditati':'Non accreditati';
+      pills+=`<span class="filter-pill" onclick="clearFilter('accreditato')">${label} <span class="x">×</span></span>`;
+    }
+    el.innerHTML=pills;
+  }
+
+  function clearFilter(f){
+    if(f==='codice') document.getElementById('filter-codice').value='';
+    if(f==='ragione') document.getElementById('filter-ragione').value='';
+    if(f==='categoria') document.getElementById('filter-categoria').value='';
+    if(f==='accreditato') setAccreditato('tutti');
+    applyFilters();
+  }
+
+  /* -------- STATS -------- */
+  function updateStats(){
+    const total = allData.length;
+    const acc = allData.filter(d=>d.accreditato).length;
+    const cats = new Set(allData.flatMap(d=>d.categorie)).size;
+    const perc = total ? Math.round(acc/total*100) : 0;
+
+    document.getElementById('stat-totale').textContent = total||'—';
+    document.getElementById('stat-filtrati').textContent = total ? filteredData.length : '—';
+    document.getElementById('stat-accreditati').textContent = total ? acc : '—';
+    document.getElementById('stat-perc').textContent = total ? `${perc}% del totale` : '—';
+    document.getElementById('stat-categorie').textContent = total ? cats : '—';
+  }
+
+  /* -------- EXPORT EXCEL -------- */
+  function exportExcel(){
+    if(!allData.length) return;
+
+    // Ricalcola i dati filtrati freschi — include TUTTE le pagine, non solo quella visibile
+    const qK = document.getElementById('filter-codice').value.trim().toLowerCase();
+    const qR = document.getElementById('filter-ragione').value.trim().toLowerCase();
+    const qC = document.getElementById('filter-categoria').value.trim().toLowerCase();
+
+    const dataToExport = allData.filter(d=>{
+      if(qK && !(d.codice||'').toLowerCase().includes(qK)) return false;
+      if(qR && !d.ragione.toLowerCase().includes(qR)) return false;
+      if(qC && !d.categorie.some(c=>c.toLowerCase().includes(qC))) return false;
+      if(accreditatoFilter==='si' && !d.accreditato) return false;
+      if(accreditatoFilter==='no' && d.accreditato) return false;
+      return true;
+    });
+
+    if(!dataToExport.length){
+      showStatus('error','⚠ Nessun dato da esportare con i filtri attuali');
+      return;
+    }
+
+    // Build worksheet rows
+    const wsData = [
+      ['Codice Fornitore', 'Ragione Sociale', 'Categorie Merceologiche', 'Articoli di Riferimento', 'Accreditato Albo']
+    ];
+    dataToExport.forEach(d=>{
+      // Per ogni fornitore, una riga per categoria (se ha articoli), altrimenti una riga sola
+      if(d.categorie.length > 1){
+        d.categorie.forEach((cat, idx) => {
+          const arts = pivotData.get(normKey(cat)) || [];
+          wsData.push([
+            idx===0 ? (d.codice||'') : '',
+            idx===0 ? d.ragione : '',
+            cat,
+            arts.join('; '),
+            idx===0 ? (d.accreditato ? 'SI' : 'NO') : ''
+          ]);
+        });
+      } else {
+        const allArts = d.categorie.flatMap(cat => pivotData.get(normKey(cat)) || []);
+        wsData.push([
+          d.codice || '',
+          d.ragione,
+          d.categorie.join('; '),
+          allArts.join('; '),
+          d.accreditato ? 'SI' : 'NO'
+        ]);
+      }
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    ws['!cols'] = [{ wch:18 },{ wch:40 },{ wch:30 },{ wch:50 },{ wch:20 }];
+
+    // Intestazioni in grassetto blu scuro
+    const headerRange = XLSX.utils.decode_range('A1:E1');
+    for(let C = headerRange.s.c; C <= headerRange.e.c; C++){
+      const cell = ws[XLSX.utils.encode_cell({r:0, c:C})];
+      if(!cell) continue;
+      cell.s = {
+        font: { bold:true, color:{ rgb:'FFFFFF' } },
+        fill: { fgColor:{ rgb:'1A2744' } },
+        alignment: { horizontal:'center', vertical:'center' }
+      };
+    }
+
+    // Colonna Accreditato: verde SI, grigio NO
+    dataToExport.forEach((d, i)=>{
+      const cell = ws[XLSX.utils.encode_cell({r: i+1, c:4})];
+      if(!cell) return;
+      cell.s = {
+        font: { bold:true, color:{ rgb: d.accreditato ? '15803D' : '94A3B8' } },
+        alignment: { horizontal:'center' }
+      };
+    });
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Fornitori');
+
+    // Foglio info estrazione
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('it-IT');
+    const timeStr = now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    const wsMeta = XLSX.utils.aoa_to_sheet([
+      ['Registro Fornitori — Estratto filtrato'],
+      ['Data esportazione', `${dateStr} ore ${timeStr}`],
+      ['Totale fornitori nel DB', allData.length],
+      ['Record esportati', dataToExport.length],
+      ['Filtri applicati', buildFiltersDescription()]
+    ]);
+    wsMeta['!cols'] = [{wch:30},{wch:40}];
+    XLSX.utils.book_append_sheet(wb, wsMeta, 'Info Estrazione');
+
+    const pad = n => String(n).padStart(2,'0');
+    const filename = `Fornitori_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}.xlsx`;
+    XLSX.writeFile(wb, filename);
+  }
+
+  function buildFiltersDescription(){
+    const parts = [];
+    const qK = document.getElementById('filter-codice').value.trim();
+    const qR = document.getElementById('filter-ragione').value.trim();
+    const qC = document.getElementById('filter-categoria').value.trim();
+    if(qK) parts.push(`Codice: "${qK}"`);
+    if(qR) parts.push(`Ragione Sociale: "${qR}"`);
+    if(qC) parts.push(`Categoria: "${qC}"`);
+    if(accreditatoFilter==='si') parts.push('Solo accreditati');
+    if(accreditatoFilter==='no') parts.push('Solo non accreditati');
+    return parts.length ? parts.join(' | ') : 'Nessun filtro (tutti i fornitori)';
+  }
+
+  /* -------- STATUS / MODAL -------- */
+  function showStatus(type, msg){
+    const el=document.getElementById('upload-status');
+    el.className='upload-status '+type;
+    el.textContent=msg;
+    el.style.display='flex';
+    if(type==='success'||type==='info') setTimeout(()=>el.style.display='none',5000);
+  }
+
+  function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
+
+  /* -------- GITLAB AUTO-LOAD -------- */
+  const GITLAB_PROJECT_ID = '36822258'; // User ID usato come project ID — sarà sostituito sotto
+  const GITLAB_USERNAME = 'fdiclemente80';
+  const GITLAB_REPO = 'registro-fornitori';
+  const GITLAB_BRANCH = 'main';
+  const GITLAB_FILENAME = 'Esempio_DB.xlsx';
+
+  // URL API GitLab con encoding del filename e cache-busting
+  function getGitLabAPIUrl(){
+    const encoded = encodeURIComponent(GITLAB_FILENAME);
+    return `https://gitlab.com/api/v4/projects/${GITLAB_USERNAME}%2F${GITLAB_REPO}/repository/files/${encoded}/raw?ref=${GITLAB_BRANCH}&cb=${Date.now()}`;
+  }
+
+  function loadFromGitLab(silent){
+    const btn = document.getElementById('btn-gitlab');
+    const label = document.getElementById('btn-gitlab-label');
+    btn.disabled = true;
+    btn.classList.add('loading');
+    label.textContent = 'Caricamento in corso…';
+    if(!silent) showStatus('info','⏳ Scaricamento DB da GitLab…');
+
+    fetch(getGitLabAPIUrl())
+      .then(r => {
+        if(!r.ok) throw new Error('HTTP ' + r.status + ' — verifica che il repository sia Public');
+        return r.arrayBuffer();
+      })
+      .then(buffer => {
+        const wb = XLSX.read(buffer, {type:'array'});
+
+        // ── 1. Foglio principale fornitori (primo foglio) ──
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+        if(rows.length < 2) throw new Error('File vuoto o privo di dati');
+
+        const headers = rows[0].map(h=>String(h).trim().toLowerCase());
+        let colK=-1, colR=-1, colC=-1, colA=-1;
+        headers.forEach((h,i)=>{
+          if(h.includes('codice')||h.includes('cod.')||h.includes('code')||h==='id') colK=i;
+          else if(h.includes('ragione')||h.includes('social')||h.includes('denominaz')) colR=i;
+          else if(h.includes('categ')||h.includes('merceol')||h.includes('settore')) colC=i;
+          else if(h.includes('accredit')||h.includes('albo')) colA=i;
+        });
+        if(colK<0) colK=0;
+        if(colR<0) colR=1;
+        if(colC<0) colC=2;
+        if(colA<0) colA=3;
+
+        // Ogni riga = un fornitore con UNA categoria merceologica (nessun split).
+        // Se un fornitore appare su più righe, le categorie vengono aggregate.
+        // Chiave di aggregazione: SEMPRE la ragione sociale normalizzata
+        // (il codice fornitore può essere #N/D o assente — non è affidabile come chiave)
+        const INVALID_CODES = new Set(['#n/d','#n/a','#ref!','#value!','#div/0!','#nome?','#null!','#error!','n/d','n/a','']);
+        const fornitoriMap = new Map();
+        for(let i=1;i<rows.length;i++){
+          const row = rows[i];
+          const ragione = String(row[colR]||'').trim();
+          if(!ragione) continue;
+          const codiceRaw = String(row[colK]||'').trim();
+          // Codice valido solo se non è un errore Excel
+          const codice = INVALID_CODES.has(codiceRaw.toLowerCase()) ? '' : codiceRaw;
+          const cat    = String(row[colC]||'').trim(); // una singola categoria per riga, nessun split
+          const accRaw = String(row[colA]||'').trim().toUpperCase();
+          const accreditato = accRaw==='SI'||accRaw==='SÌ'||accRaw==='1'||accRaw==='TRUE'||accRaw==='YES'||accRaw==='S';
+          // Chiave di aggregazione: ragione sociale normalizzata (stabile e sempre presente)
+          const key = ragione.toLowerCase().trim();
+          if(!fornitoriMap.has(key)){
+            fornitoriMap.set(key, {codice, ragione, categorie: [], accreditato});
+          }
+          const entry = fornitoriMap.get(key);
+          // Aggiorna codice se quello in mappa è vuoto e quello corrente è valido
+          if(!entry.codice && codice) entry.codice = codice;
+          // Aggiorna accreditato (prevale SI se presente in almeno una riga)
+          if(accreditato) entry.accreditato = true;
+          // Aggiunge la categoria solo se non già presente (evita duplicati)
+          if(cat && !entry.categorie.includes(cat)){
+            entry.categorie.push(cat);
+          }
+        }
+        allData = Array.from(fornitoriMap.values());
+        if(!allData.length) throw new Error('Nessun dato valido trovato');
+
+        // ── 2. Foglio "Pivot articoli Alyante" (se presente) ──
+        // Struttura: colonna "Descrizione_famiglia" = categoria merceologica
+        //            colonna "Descrizione_articolo" = articolo associato
+        // Mappa globale: normKey(categoria) -> [articoli]
+        pivotData = new Map();
+        const pivotSheetName = wb.SheetNames.find(n => n.toLowerCase().includes('pivot articoli'));
+        if(pivotSheetName){
+          const wsPivot = wb.Sheets[pivotSheetName];
+          const pivotRows = XLSX.utils.sheet_to_json(wsPivot, {header:1, defval:''});
+          if(pivotRows.length >= 2){
+            // Normalizza intestazioni sostituendo _ con spazio
+            const ph = pivotRows[0].map(h=>String(h).trim().toLowerCase().replace(/_/g,' '));
+            let pColCat = -1, pColArt = -1;
+            // Prima passata: match esatto sulle intestazioni note del foglio Alyante
+            ph.forEach((h,i)=>{
+              if(h==='descrizione famiglia') pColCat = i;
+              if(h==='descrizione articolo') pColArt = i;
+            });
+            // Seconda passata: fallback — esclude colonne "codice" per non fare confusione
+            if(pColCat < 0) ph.forEach((h,i)=>{
+              if(pColCat < 0 && !h.startsWith('codice') &&
+                 (h.includes('famiglia') || h.includes('categ') || h.includes('merceol') || h.includes('settore')))
+                pColCat = i;
+            });
+            if(pColArt < 0) ph.forEach((h,i)=>{
+              if(pColArt < 0 && !h.startsWith('codice') &&
+                 (h.includes('articol') || h.includes('prodot') || h.includes('item') || h.includes('descriz')))
+                pColArt = i;
+            });
+            // Fallback posizionale: Descrizione_articolo=col2, Descrizione_famiglia=col4
+            if(pColCat < 0) pColCat = 4;
+            if(pColArt < 0) pColArt = 2;
+
+            for(let i=1; i<pivotRows.length; i++){
+              const pr = pivotRows[i];
+              const cat      = String(pr[pColCat]||'').trim();
+              const articolo = String(pr[pColArt]||'').trim();
+              if(!cat || !articolo) continue;
+              const catNorm = normKey(cat);
+              if(!pivotData.has(catNorm)) pivotData.set(catNorm, []);
+              // Evita duplicati
+              if(!pivotData.get(catNorm).includes(articolo)) {
+                pivotData.get(catNorm).push(articolo);
+              }
+            }
+          }
+        }
+
+        updateCategoryDropdown();
+        applyFilters();
+        saveToStorage(GITLAB_FILENAME);
+        updateStats();
+        const pivotMsg = pivotSheetName ? ` · Pivot articoli caricato` : '';
+        showStatus('success', `✓ DB aggiornato da GitLab — ${allData.length} fornitori caricati${pivotMsg}`);
+      })
+      .catch(err => {
+        showStatus('error', '⚠ Impossibile scaricare il DB da GitLab: ' + err.message);
+        if(!silent){
+          // Mostra suggerimento
+          setTimeout(()=> showStatus('error', '⚠ Controlla che il repository GitLab sia impostato su Public'), 4000);
+        }
+      })
+      .finally(()=>{
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        label.textContent = 'Aggiorna DB da GitLab';
+      });
+  }
+
+  /* -------- LOCALSTORAGE PERSISTENCE -------- */
+  const LS_KEY = 'registro_fornitori_db';
+
+  function saveToStorage(filename){
+    try {
+      // Serializza pivotData (Map<cat, string[]>) in formato JSON
+      const pivotSerial = {};
+      pivotData.forEach((arts, cat) => { pivotSerial[cat] = arts; });
+      const payload = {
+        data: allData,
+        pivot: pivotSerial,
+        filename: filename,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem(LS_KEY, JSON.stringify(payload));
+      renderStorageBanner();
+    } catch(e){
+      console.warn('localStorage non disponibile:', e);
+    }
+  }
+
+  function loadFromStorage(){
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return false;
+      const payload = JSON.parse(raw);
+      if(!payload.data || !payload.data.length) return false;
+      allData = payload.data;
+      // Ripristina pivotData
+      pivotData = new Map();
+      if(payload.pivot){
+        Object.entries(payload.pivot).forEach(([cat, arts]) => pivotData.set(cat, arts));
+      }
+      updateCategoryDropdown();
+      applyFilters();
+      updateStats();
+      renderStorageBanner(payload);
+      return true;
+    } catch(e){
+      return false;
+    }
+  }
+
+  function clearStorage(){
+    if(!confirm('Sei sicuro di voler cancellare il DB salvato nel browser?\nDovrai ricaricare il file Excel al prossimo accesso.')) return;
+    localStorage.removeItem(LS_KEY);
+    allData = [];
+    filteredData = [];
+    applyFilters();
+    updateStats();
+    renderStorageBanner();
+    showStatus('info','🗑 DB rimosso dalla memoria del browser');
+  }
+
+  function renderStorageBanner(payload){
+    const el = document.getElementById('storage-banner');
+    if(!el) return;
+    if(!payload){
+      // Try reading from storage to show info even when called without payload
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        payload = raw ? JSON.parse(raw) : null;
+      } catch(e){ payload = null; }
+    }
+    if(!payload || !payload.data || !payload.data.length){
+      el.style.display = 'none';
+      return;
+    }
+    const d = new Date(payload.savedAt);
+    const when = d.toLocaleDateString('it-IT') + ' ore ' + d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    el.style.display = 'flex';
+    el.innerHTML = `
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:11px;color:var(--success);margin-bottom:2px">
+          💾 DB in memoria — ${payload.data.length} fornitori
+        </div>
+        <div style="font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          Ultimo caricamento: ${when} · ${payload.filename}
+        </div>
+      </div>
+      <button onclick="clearStorage()" title="Cancella DB salvato" style="flex-shrink:0;background:none;border:1px solid #fca5a5;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:600;color:#ef4444;cursor:pointer;font-family:inherit;white-space:nowrap">
+        🗑 Cancella
+      </button>`;
+  }
+
+  /* -------- INIT -------- */
+  const restored = loadFromStorage();
+  if(!restored){
+    // Nessun DB in memoria — carica automaticamente da GitLab
+    loadFromGitLab(true);
+  } else {
+    // DB ripristinato dalla memoria — aggiorna label pulsante
+    document.getElementById('btn-gitlab-label').textContent = 'Aggiorna DB da GitLab';
+  }
+</script>
+</body>
+</html>
